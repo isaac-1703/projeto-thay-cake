@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Administrador | Thay Cake</title>
+
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Tailwind CSS v4 -->
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/992/992717.png">
+</head>
+
+<body style="background-color: var(--beige-light);">
+
+    <!-- Login Overlay: Shown when JWT token is absent/expired -->
+    <div class="login-overlay" id="admin-login-overlay" style="display: none;">
+        <div class="login-card">
+            <button class="back-to-store-btn" onclick="window.location.href='/'" title="Voltar para a loja">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="login-header">
+                <div class="login-logo">🧁</div>
+                <h2 class="login-title">Área do Administrador</h2>
+                <p class="login-subtitle">Entre com suas credenciais de segurança</p>
+            </div>
+
+            <form id="admin-login-form">
+                <div class="form-group">
+                    <label for="login-username">Usuário</label>
+                    <input type="text" id="login-username" class="form-input" placeholder="Ex: admin" required
+                        autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Senha</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="••••••••" required
+                        autocomplete="current-password">
+                </div>
+
+                <button type="submit" id="login-submit-btn" class="btn-submit" style="margin-top: 1rem;">
+                    Entrar <i class="fa-solid fa-key" style="margin-left: 0.5rem;"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Control Panel Layout: Shown only when authenticated -->
+    <div class="admin-container" id="admin-dashboard-panel" style="display: none;">
+        <!-- Top Nav Menu -->
+        <nav class="admin-nav">
+            <div class="admin-title-area">
+                <h3>🍰 Thay Cake Admin</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Painel de Gestão da Vitrine & Feedbacks</p>
+            </div>
+            <div class="admin-nav-actions">
+                <a href="/" class="btn-secondary"><i class="fa-solid fa-store"></i> Ver Loja</a>
+                <button id="admin-logout-btn" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i>
+                    Sair</button>
+            </div>
+        </nav>
+
+        <!-- Main Dashboard Split Grid -->
+        <div class="admin-grid">
+            <!-- Left Side: Product Management Card -->
+            <div class="admin-card">
+                <h4 class="admin-card-title"><i class="fa-solid fa-circle-plus"
+                        style="color: var(--purple-medium);"></i> Novo Bolo de Pote</h4>
+
+                <form id="add-product-form">
+                    <div class="form-group">
+                        <label for="product-name">Nome do Bolo</label>
+                        <input type="text" id="product-name" class="form-input"
+                            placeholder="Ex: Ninho com Nutella Gourmet" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product-price">Preço (R$)</label>
+                        <input type="number" step="0.01" id="product-price" class="form-input" placeholder="Ex: 15.00"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Foto do Produto</label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="product-photo" class="file-upload-input" accept="image/*" required>
+                            <div class="file-upload-label" id="file-drag-label">
+                                <i class="fa-solid fa-cloud-arrow-up fa-2x"></i>
+                                <span id="file-label-text">Selecione ou arraste a imagem</span>
+                                <span style="font-size: 0.75rem; opacity: 0.7;">PNG, JPG, WEBP até 5MB</span>
+                            </div>
+                        </div>
+                        <img id="upload-preview-img" class="file-upload-preview" alt="Preview da imagem">
+                    </div>
+
+                    <button type="submit" id="product-submit-btn" class="btn-submit" style="margin-top: 1rem;">
+                        Adicionar à Vitrine <i class="fa-solid fa-plus" style="margin-left: 0.5rem;"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right Side: Current Products & Feedbacks list -->
+            <div style="display: flex; flex-direction: column; gap: 2.5rem;">
+                <!-- Current Products Table -->
+                <div class="admin-card">
+                    <h4 class="admin-card-title"><i class="fa-solid fa-images" style="color: var(--purple-medium);"></i>
+                        Produtos na Vitrine</h4>
+                    <div class="products-table-wrapper">
+                        <table class="admin-products-table">
+                            <thead>
+                                <tr>
+                                    <th>Imagem</th>
+                                    <th>Nome</th>
+                                    <th>Preço</th>
+                                    <th style="text-align: center;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-products-tbody">
+                                <!-- Products will be dynamically loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Feedbacks Log Dashboard -->
+                <div class="admin-card">
+                    <h4 class="admin-card-title"><i class="fa-solid fa-comments"
+                            style="color: var(--purple-medium);"></i> Feedbacks dos Clientes</h4>
+                    <div class="feedbacks-container" id="admin-feedbacks-list" style="max-height: 400px;">
+                        <!-- Feedbacks list will be dynamically loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Feedback Modal Overlay -->
+    <div class="login-overlay" id="edit-feedback-overlay" style="display: none;">
+        <div class="login-card" style="max-width: 500px;">
+            <button class="back-to-store-btn" id="close-edit-modal-btn" title="Fechar modal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="login-header">
+                <div class="login-logo">📝</div>
+                <h2 class="login-title">Editar Feedback</h2>
+                <p class="login-subtitle">Altere as informações da avaliação do cliente</p>
+            </div>
+
+            <form id="edit-feedback-form">
+                <input type="hidden" id="edit-feedback-id">
+                
+                <div class="form-group">
+                    <label for="edit-feedback-name">Nome do Cliente</label>
+                    <input type="text" id="edit-feedback-name" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Avaliação</label>
+                    <div class="star-selector" id="edit-star-rating-selector" role="radiogroup" aria-label="Avaliação em estrelas">
+                        <span class="star-option" data-value="1" role="radio" aria-checked="false" tabindex="0"><i class="fa-solid fa-star"></i></span>
+                        <span class="star-option" data-value="2" role="radio" aria-checked="false" tabindex="0"><i class="fa-solid fa-star"></i></span>
+                        <span class="star-option" data-value="3" role="radio" aria-checked="false" tabindex="0"><i class="fa-solid fa-star"></i></span>
+                        <span class="star-option" data-value="4" role="radio" aria-checked="false" tabindex="0"><i class="fa-solid fa-star"></i></span>
+                        <span class="star-option" data-value="5" role="radio" aria-checked="false" tabindex="0"><i class="fa-solid fa-star"></i></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-feedback-comment">Comentário</label>
+                    <textarea id="edit-feedback-comment" class="form-input" required></textarea>
+                </div>
+
+                <button type="submit" id="edit-submit-btn" class="btn-submit" style="margin-top: 1rem;">
+                    Salvar Alterações <i class="fa-solid fa-floppy-disk" style="margin-left: 0.5rem;"></i>
+                </button>
+                <button type="button" id="edit-delete-btn" class="btn-submit" style="margin-top: 0.8rem; background: linear-gradient(135deg, #E03E3E, #B81D1D); box-shadow: 0 6px 15px rgba(224, 62, 62, 0.15); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    Excluir Avaliação <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container-root"></div>
+
+    <!-- Admin JS Controller Script -->
+    <script src="admin.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <title>Thay Cake | Deliciosos Bolos de Pote Online</title>
+    <meta name="description"
+        content="Experimente os melhores bolos de pote artesanais da região! Sabores irresistíveis, ingredientes premium e entrega rápida. Peça já pelo WhatsApp!">
+    <meta name="keywords" content="bolo de pote, doces, confeitaria, thay cake, bolo online, comprar bolo, sobremesa">
+    <meta name="author" content="Thay Cake">
+
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Tailwind CSS v4 -->
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+
+    <!-- Tailwind Custom Animations Config -->
+    <style type="text/tailwindcss">
+        @theme {
+            --animate-slide-l2r: slideLeftToRight var(--anim-duration, 20s) linear forwards;
+            --animate-slide-r2l: slideRightToLeft var(--anim-duration, 20s) linear forwards;
+        }
+
+        @keyframes slideLeftToRight {
+            0% {
+                transform: translate3d(-100px, 0, 0) scale(0.95);
+                opacity: 0;
+            }
+            8% {
+                opacity: 0.85;
+            }
+            92% {
+                opacity: 0.85;
+            }
+            100% {
+                transform: translate3d(100vw, 0, 0) scale(0.95);
+                opacity: 0;
+            }
+        }
+
+        @keyframes slideRightToLeft {
+            0% {
+                transform: translate3d(100vw, 0, 0) scale(0.95);
+                opacity: 0;
+            }
+            8% {
+                opacity: 0.85;
+            }
+            92% {
+                opacity: 0.85;
+            }
+            100% {
+                transform: translate3d(-100px, 0, 0) scale(0.95);
+                opacity: 0;
+            }
+        }
+    </style>
+
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/992/992717.png">
+</head>
+
+<body>
+
+    <!-- Header & Navigation -->
+    <header>
+        <div class="logo-container">
+            <span class="logo-icon" aria-hidden="true">🧁</span>
+            <h1 class="brand-title">Thay Cake</h1>
+        </div>
+    </header>
+
+    <!-- Hero / Welcoming Banner -->
+    <section class="hero">
+        <!-- Background cake animation rows -->
+        <div class="hero-bg-animation" id="hero-animation-container" aria-hidden="true">
+            <div class="animation-row row-1" id="row-l2r-1"></div>
+            <div class="animation-row row-2" id="row-r2l-2"></div>
+            <div class="animation-row row-3" id="row-l2r-3"></div>
+        </div>
+
+        <div class="hero-content">
+            <div class="hero-badge">Sabor Caseiro & Amor no Pote</div>
+            <h2>Os mais irresistíveis <span>Bolos de Pote</span> pertinho de você!</h2>
+            <p class="hero-subtitle">
+                Feitos artesanalmente com ingredientes selecionados e um toque de carinho. Escolha o seu favorito e peça
+                diretamente no nosso WhatsApp!
+            </p>
+            <a href="#vitrine" class="hero-cta-scroll">
+                Ver Sabores Disponíveis <i class="fa-solid fa-arrow-down"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- Vitrine / Product Showcase (Static Grid) -->
+    <section id="vitrine" class="vitrine-section">
+        <div class="section-header">
+            <h3>Nossa Vitrine Doce</h3>
+            <p>Escolha o seu sabor favorito e peça já!</p>
+        </div>
+
+        <div class="products-grid-container">
+            <div class="products-grid" id="vitrine-products-container">
+                <!-- Products will be dynamically injected here -->
+                <div class="no-feedbacks" style="width: 100%; max-width: 600px; margin: 0 auto;">
+                    <i class="fa-solid fa-spinner fa-spin fa-2x"
+                        style="color: var(--purple-medium); margin-bottom: 1rem;"></i>
+                    <p>Carregando os bolos de pote mais deliciosos...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feedbacks & Reviews Section -->
+    <section class="feedback-section" id="avaliacoes">
+        <div class="section-header">
+            <h3>O que dizem nossos Clientes</h3>
+            <p>Sua opinião é fundamental para mantermos nosso padrão de doçura!</p>
+        </div>
+
+        <div class="feedback-grid">
+            <!-- Left Side: Interactive Feedback Form -->
+            <div class="feedback-form-card">
+                <h4>Deixe seu Feedback</h4>
+                <p>Compartilhe sua experiência conosco e ajude-nos a melhorar!</p>
+
+                <form id="add-feedback-form">
+                    <div class="form-group">
+                        <label for="feedback-name">Seu Nome</label>
+                        <input type="text" id="feedback-name" class="form-input" placeholder="Ex: Maria Souza" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sua Nota</label>
+                        <div class="star-selector" id="star-rating-selector" role="radiogroup"
+                            aria-label="Avaliação em estrelas">
+                            <span class="star-option" data-value="1" role="radio" aria-checked="false" tabindex="0"><i
+                                    class="fa-solid fa-star"></i></span>
+                            <span class="star-option" data-value="2" role="radio" aria-checked="false" tabindex="0"><i
+                                    class="fa-solid fa-star"></i></span>
+                            <span class="star-option" data-value="3" role="radio" aria-checked="false" tabindex="0"><i
+                                    class="fa-solid fa-star"></i></span>
+                            <span class="star-option" data-value="4" role="radio" aria-checked="false" tabindex="0"><i
+                                    class="fa-solid fa-star"></i></span>
+                            <span class="star-option" data-value="5" role="radio" aria-checked="false" tabindex="0"><i
+                                    class="fa-solid fa-star"></i></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="feedback-comment">Seu Comentário</label>
+                        <textarea id="feedback-comment" class="form-input"
+                            placeholder="O que você achou dos nossos bolos de pote?" required></textarea>
+                    </div>
+
+                    <button type="submit" id="submit-feedback-btn" class="btn-submit">
+                        Enviar Avaliação <i class="fa-regular fa-paper-plane" style="margin-left: 0.5rem;"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right Side: Feedbacks Wall -->
+            <div class="feedbacks-wrapper">
+                <h4
+                    style="font-family: var(--font-heading); font-size: 1.8rem; color: var(--purple-dark); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                    Avaliações Recentes
+                </h4>
+                <div class="feedbacks-container" id="feedbacks-list-container">
+                    <!-- Feedbacks will be dynamically injected here -->
+                    <div class="no-feedbacks">
+                        <i class="fa-solid fa-spinner fa-spin" style="margin-bottom: 0.5rem;"></i>
+                        <p>Carregando avaliações...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <h4>🍰 Thay Cake</h4>
+            <p>O bolo de pote perfeito para alegrar o seu dia.</p>
+            <p><i class="fa-solid fa-phone"></i> WhatsApp: (89) 98819-4690</p>
+        </div>
+        <hr class="footer-divider">
+        <div class="footer-bottom">
+            &copy; 2026 Thay Cake. Todos os direitos reservados.
+        </div>
+    </footer>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toast-container-root"></div>
+
+    <!-- Application Script -->
+    <script src="app.js"></script>
+</body>
+
+</html>
