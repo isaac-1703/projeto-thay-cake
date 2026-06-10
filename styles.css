@@ -252,7 +252,7 @@ h1.brand-title {
 
 .products-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 2.5rem;
     justify-items: center;
     width: 100%;
@@ -261,12 +261,12 @@ h1.brand-title {
 /* Product Card - Ultra Premium Glassmorphism */
 .product-card {
     width: 100%;
-    max-width: 320px;
+    max-width: 260px;
     background: var(--glass-bg);
     backdrop-filter: blur(16px);
     border: 1px solid var(--glass-border);
     border-radius: 24px;
-    padding: 1.5rem;
+    padding: 1.2rem;
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
@@ -284,7 +284,7 @@ h1.brand-title {
 
 .product-img-wrapper {
     width: 100%;
-    height: 220px;
+    height: 180px;
     border-radius: 18px;
     overflow: hidden;
     position: relative;
@@ -325,13 +325,13 @@ h1.brand-title {
 .product-title {
     font-family: var(--font-body);
     font-weight: 700;
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     color: var(--purple-dark);
 }
 
 .product-price {
     font-family: var(--font-heading);
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     color: var(--brown-medium);
 }
 
@@ -341,10 +341,10 @@ h1.brand-title {
     color: var(--white);
     border: 2px solid rgba(224, 224, 224, 0.4);
     border-radius: 16px;
-    padding: 1rem;
+    padding: 0.8rem;
     font-family: var(--font-body);
     font-weight: 600;
-    font-size: 1.05rem;
+    font-size: 1rem;
     cursor: pointer;
     display: flex;
     align-items: center;
