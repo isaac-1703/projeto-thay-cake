@@ -245,7 +245,7 @@ h1.brand-title {
 
 /* Products Grid layout */
 .products-grid-container {
-    max-width: 1200px;
+    max-width: 2000px;
     margin: 0 auto;
     padding: 1rem 5% 3rem 5%;
 }
