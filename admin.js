@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const API_LOGIN_URL = "/api/login";
     const API_PRODUCTS_URL = "/api/products";
     const API_FEEDBACKS_URL = "/api/feedbacks";
+    const API_CREATORS_URL = "/api/creators";
 
     // Authentication DOM Bindings
     const loginOverlay = document.getElementById("admin-login-overlay");
@@ -18,9 +19,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const fileLabelText = document.getElementById("file-label-text");
     const uploadPreview = document.getElementById("upload-preview-img");
 
+    // Creator Creation Form DOM Bindings
+    const addCreatorForm = document.getElementById("add-creator-form");
+    const creatorFileInput = document.getElementById("creator-photo");
+    const creatorFileDragLabel = document.getElementById("creator-file-drag-label");
+    const creatorFileLabelText = document.getElementById("creator-file-label-text");
+    const creatorUploadPreview = document.getElementById("creator-upload-preview-img");
+    const creatorNameInput = document.getElementById("creator-name");
+    const creatorRoleInput = document.getElementById("creator-role");
+    const creatorBioInput = document.getElementById("creator-bio");
+    const creatorInstagramInput = document.getElementById("creator-instagram");
+    const creatorGithubInput = document.getElementById("creator-github");
+    const creatorLinkedinInput = document.getElementById("creator-linkedin");
+
     // Listings DOM Bindings
     const productsTbody = document.getElementById("admin-products-tbody");
     const feedbacksList = document.getElementById("admin-feedbacks-list");
+    const creatorsTbody = document.getElementById("admin-creators-tbody");
 
     // Edit Feedback Modal DOM Bindings
     const editFeedbackOverlay = document.getElementById("edit-feedback-overlay");
@@ -32,13 +47,34 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeEditModalBtn = document.getElementById("close-edit-modal-btn");
     const editFeedbackDeleteBtn = document.getElementById("edit-delete-btn");
 
+    // Edit Creator Modal DOM Bindings
+    const editCreatorOverlay = document.getElementById("edit-creator-overlay");
+    const editCreatorForm = document.getElementById("edit-creator-form");
+    const editCreatorIdInput = document.getElementById("edit-creator-id");
+    const editCreatorNameInput = document.getElementById("edit-creator-name");
+    const editCreatorRoleInput = document.getElementById("edit-creator-role");
+    const editCreatorBioInput = document.getElementById("edit-creator-bio");
+    const editCreatorFileInput = document.getElementById("edit-creator-photo");
+    const editCreatorFileDragLabel = document.getElementById("edit-creator-file-drag-label");
+    const editCreatorFileLabelText = document.getElementById("edit-creator-file-label-text");
+    const editCreatorUploadPreview = document.getElementById("edit-creator-upload-preview-img");
+    const editCreatorInstagramInput = document.getElementById("edit-creator-instagram");
+    const editCreatorGithubInput = document.getElementById("edit-creator-github");
+    const editCreatorLinkedinInput = document.getElementById("edit-creator-linkedin");
+    const closeEditCreatorModalBtn = document.getElementById("close-edit-creator-modal-btn");
+
     // Local Storage & State
     let selectedImageBase64 = "";
+    let selectedCreatorImageBase64 = "";
+    let selectedEditCreatorImageBase64 = "";
     let currentFeedbacks = [];
+    let currentCreators = [];
     let editSelectedRating = 0;
 
     // App Initialization
     setupFeedbackEditing();
+    setupCreatorEditing();
+    setupSocialSelectors();
     checkAuthentication();
 
     // =========================================
@@ -139,8 +175,11 @@ document.addEventListener("DOMContentLoaded", () => {
     function loadDashboardData() {
         loadAdminProducts();
         loadAdminFeedbacks();
+        loadAdminCreators();
         setupProductFileUpload();
         setupProductFormSubmission();
+        setupCreatorFileUpload();
+        setupCreatorFormSubmission();
     }
 
     async function authenticatedFetch(url, options = {}) {
@@ -620,6 +659,414 @@ document.addEventListener("DOMContentLoaded", () => {
                 s.setAttribute("aria-checked", "false");
             }
         });
+    }
+
+    // =========================================
+    // READ CREATORS (ADMIN VIEW)
+    // =========================================
+    async function loadAdminCreators() {
+        try {
+            const response = await fetch(API_CREATORS_URL);
+            if (!response.ok) throw new Error("Erro ao obter lista de creators.");
+            
+            currentCreators = await response.json();
+            renderAdminCreators(currentCreators);
+        } catch (error) {
+            console.error(error);
+            showToast("Erro ao carregar creators.", "error");
+        }
+    }
+
+    function renderAdminCreators(creators) {
+        if (!creators || creators.length === 0) {
+            creatorsTbody.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        <i class="fa-solid fa-users-slash fa-2x" style="margin-bottom: 0.5rem; display: block;"></i>
+                        Nenhum creator cadastrado na equipe ainda.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        creatorsTbody.innerHTML = creators.map(creator => {
+            const photoUrl = creator.photo ? creator.photo : "https://cdn-icons-png.flaticon.com/512/992/992717.png";
+            return `
+                <tr data-id="${creator.id}">
+                    <td>
+                        <img src="${photoUrl}" alt="${creator.name}" class="admin-thumb" onerror="this.src='https://cdn-icons-png.flaticon.com/512/992/992717.png'">
+                    </td>
+                    <td style="font-weight: 600; color: var(--purple-dark);">${escapeHTML(creator.name)}</td>
+                    <td style="font-weight: 500;">${escapeHTML(creator.role)}</td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; justify-content: center; gap: 0.5rem; align-items: center;">
+                            <button class="btn-edit-creator" data-id="${creator.id}" style="background: var(--purple-light); color: var(--purple-medium); border: none; padding: 0.5rem; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: var(--transition-smooth);" title="Editar informações do creator">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button class="btn-delete-creator" data-id="${creator.id}" style="background: none; border: none; color: #E03E3E; font-size: 1rem; cursor: pointer; transition: var(--transition-smooth); padding: 0.5rem; border-radius: 8px;" title="Remover creator da equipe">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        // Setup click event for edit creators
+        creatorsTbody.querySelectorAll(".btn-edit-creator").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = btn.getAttribute("data-id");
+                const creator = currentCreators.find(cr => cr.id === id);
+                if (creator) {
+                    editCreatorIdInput.value = creator.id;
+                    editCreatorNameInput.value = creator.name;
+                    editCreatorRoleInput.value = creator.role;
+                    editCreatorBioInput.value = creator.bio;
+                    editCreatorInstagramInput.value = creator.instagram || "";
+                    editCreatorGithubInput.value = creator.github || "";
+                    editCreatorLinkedinInput.value = creator.linkedin || "";
+
+                    // Toggle visibility of the social input groups based on if they have value
+                    document.getElementById("edit-creator-instagram-group").style.display = creator.instagram ? "block" : "none";
+                    document.getElementById("edit-creator-github-group").style.display = creator.github ? "block" : "none";
+                    document.getElementById("edit-creator-linkedin-group").style.display = creator.linkedin ? "block" : "none";
+                    
+                    // Show current image in preview
+                    editCreatorUploadPreview.src = creator.photo;
+                    editCreatorUploadPreview.style.display = "block";
+                    editCreatorFileLabelText.textContent = "Alterar imagem (opcional)";
+                    selectedEditCreatorImageBase64 = "";
+                    
+                    editCreatorOverlay.style.display = "flex";
+                }
+            });
+        });
+
+        // Setup click event for delete creators
+        creatorsTbody.querySelectorAll(".btn-delete-creator").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = btn.getAttribute("data-id");
+                deleteCreator(id);
+            });
+        });
+    }
+
+    // =========================================
+    // FILE UPLOAD PROCESSORS FOR CREATORS
+    // =========================================
+    function setupCreatorFileUpload() {
+        // Form: Add Creator Upload
+        creatorFileInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                showToast("A imagem do criador excede o limite de 5MB.", "error");
+                creatorFileInput.value = "";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                selectedCreatorImageBase64 = event.target.result;
+                creatorUploadPreview.src = selectedCreatorImageBase64;
+                creatorUploadPreview.style.display = "block";
+                creatorFileLabelText.textContent = file.name;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Drag and drop highlights for Creator Add Upload
+        ["dragenter", "dragover"].forEach(eventName => {
+            creatorFileDragLabel.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                creatorFileDragLabel.style.borderColor = "var(--purple-medium)";
+                creatorFileDragLabel.style.background = "rgba(75, 36, 99, 0.05)";
+            }, false);
+        });
+
+        ["dragleave", "drop"].forEach(eventName => {
+            creatorFileDragLabel.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                creatorFileDragLabel.style.borderColor = "rgba(75, 36, 99, 0.3)";
+                creatorFileDragLabel.style.background = "rgba(255,255,255,0.4)";
+            }, false);
+        });
+
+        creatorFileDragLabel.addEventListener("drop", (e) => {
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith("image/")) {
+                creatorFileInput.files = e.dataTransfer.files;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    selectedCreatorImageBase64 = event.target.result;
+                    creatorUploadPreview.src = selectedCreatorImageBase64;
+                    creatorUploadPreview.style.display = "block";
+                    creatorFileLabelText.textContent = file.name;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Form: Edit Creator Upload
+        editCreatorFileInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                showToast("A imagem do criador excede o limite de 5MB.", "error");
+                editCreatorFileInput.value = "";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                selectedEditCreatorImageBase64 = event.target.result;
+                editCreatorUploadPreview.src = selectedEditCreatorImageBase64;
+                editCreatorUploadPreview.style.display = "block";
+                editCreatorFileLabelText.textContent = file.name;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Drag and drop highlights for Creator Edit Upload
+        ["dragenter", "dragover"].forEach(eventName => {
+            editCreatorFileDragLabel.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                editCreatorFileDragLabel.style.borderColor = "var(--purple-medium)";
+                editCreatorFileDragLabel.style.background = "rgba(75, 36, 99, 0.05)";
+            }, false);
+        });
+
+        ["dragleave", "drop"].forEach(eventName => {
+            editCreatorFileDragLabel.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                editCreatorFileDragLabel.style.borderColor = "rgba(75, 36, 99, 0.3)";
+                editCreatorFileDragLabel.style.background = "rgba(255,255,255,0.4)";
+            }, false);
+        });
+
+        editCreatorFileDragLabel.addEventListener("drop", (e) => {
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith("image/")) {
+                editCreatorFileInput.files = e.dataTransfer.files;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    selectedEditCreatorImageBase64 = event.target.result;
+                    editCreatorUploadPreview.src = selectedEditCreatorImageBase64;
+                    editCreatorUploadPreview.style.display = "block";
+                    editCreatorFileLabelText.textContent = file.name;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // =========================================
+    // WRITE CREATORS (ADD CREATOR SUBMISSION)
+    // =========================================
+    function setupCreatorFormSubmission() {
+        addCreatorForm.onsubmit = async (e) => {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById("creator-submit-btn");
+            const originalBtnHtml = submitBtn.innerHTML;
+
+            if (!selectedCreatorImageBase64) {
+                showToast("Por favor, selecione ou arraste uma foto para o creator!", "error");
+                return;
+            }
+
+            const payload = {
+                name: creatorNameInput.value.trim(),
+                role: creatorRoleInput.value.trim(),
+                bio: creatorBioInput.value.trim(),
+                photo: selectedCreatorImageBase64,
+                instagram: creatorInstagramInput.value.trim(),
+                github: creatorGithubInput.value.trim(),
+                linkedin: creatorLinkedinInput.value.trim()
+            };
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Cadastrando...`;
+
+                const response = await authenticatedFetch(API_CREATORS_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response) return;
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || "Falha ao cadastrar o creator.");
+                }
+
+                showToast("Creator cadastrado com sucesso!", "success");
+                
+                // Reset form states
+                addCreatorForm.reset();
+                selectedCreatorImageBase64 = "";
+                creatorFileLabelText.textContent = "Selecione ou arraste a imagem";
+                creatorUploadPreview.style.display = "none";
+                creatorUploadPreview.src = "";
+
+                // Hide social input groups
+                document.getElementById("creator-instagram-group").style.display = "none";
+                document.getElementById("creator-github-group").style.display = "none";
+                document.getElementById("creator-linkedin-group").style.display = "none";
+
+                // Reload creators
+                loadAdminCreators();
+            } catch (error) {
+                console.error(error);
+                showToast(error.message || "Erro de rede ao adicionar creator.", "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+            }
+        };
+    }
+
+    // =========================================
+    // EDIT & DELETE CREATORS WORKFLOW
+    // =========================================
+    function setupCreatorEditing() {
+        closeEditCreatorModalBtn.addEventListener("click", () => {
+            editCreatorOverlay.style.display = "none";
+        });
+
+        editCreatorOverlay.addEventListener("click", (e) => {
+            if (e.target === editCreatorOverlay) {
+                editCreatorOverlay.style.display = "none";
+            }
+        });
+
+        editCreatorForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const creatorId = editCreatorIdInput.value;
+            const submitBtn = document.getElementById("edit-creator-submit-btn");
+            const originalBtnHtml = submitBtn.innerHTML;
+
+            const payload = {
+                id: creatorId,
+                name: editCreatorNameInput.value.trim(),
+                role: editCreatorRoleInput.value.trim(),
+                bio: editCreatorBioInput.value.trim(),
+                photo: selectedEditCreatorImageBase64 || editCreatorUploadPreview.src,
+                instagram: editCreatorInstagramInput.value.trim(),
+                github: editCreatorGithubInput.value.trim(),
+                linkedin: editCreatorLinkedinInput.value.trim()
+            };
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Salvando...`;
+
+                const response = await authenticatedFetch(API_CREATORS_URL, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response) return;
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || "Falha ao atualizar creator.");
+                }
+
+                showToast("Creator atualizado com sucesso!", "success");
+                editCreatorOverlay.style.display = "none";
+                loadAdminCreators();
+            } catch (error) {
+                console.error(error);
+                showToast(error.message || "Erro de rede ao salvar creator.", "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+            }
+        });
+    }
+
+    function setupSocialSelectors() {
+        const creatorSocialSelect = document.getElementById("creator-social-select");
+        const editCreatorSocialSelect = document.getElementById("edit-creator-social-select");
+
+        // Helper to show group
+        function handleSocialSelect(selectEl, prefix) {
+            selectEl.addEventListener("change", (e) => {
+                const social = e.target.value;
+                if (!social) return;
+
+                const groupEl = document.getElementById(`${prefix}-${social}-group`);
+                if (groupEl) {
+                    groupEl.style.display = "block";
+                    // Focus the input
+                    const inputEl = document.getElementById(`${prefix}-${social}`);
+                    if (inputEl) inputEl.focus();
+                }
+                // Reset select value
+                selectEl.value = "";
+            });
+        }
+
+        if (creatorSocialSelect) handleSocialSelect(creatorSocialSelect, "creator");
+        if (editCreatorSocialSelect) handleSocialSelect(editCreatorSocialSelect, "edit-creator");
+
+        // Handle remove buttons
+        document.querySelectorAll(".btn-remove-social").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const type = btn.getAttribute("data-type"); // "creator" or "edit"
+                const social = btn.getAttribute("data-social"); // "instagram", "github", "linkedin"
+
+                let inputId = "";
+                let groupId = "";
+
+                if (type === "creator") {
+                    inputId = `creator-${social}`;
+                    groupId = `creator-${social}-group`;
+                } else if (type === "edit") {
+                    inputId = `edit-creator-${social}`;
+                    groupId = `edit-creator-${social}-group`;
+                }
+
+                const inputEl = document.getElementById(inputId);
+                const groupEl = document.getElementById(groupId);
+
+                if (inputEl) inputEl.value = "";
+                if (groupEl) groupEl.style.display = "none";
+            });
+        });
+    }
+
+    async function deleteCreator(creatorId) {
+        if (!confirm("Deseja realmente remover este creator da equipe?")) return;
+
+        try {
+            const response = await authenticatedFetch(API_CREATORS_URL, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: creatorId })
+            });
+
+            if (!response) return;
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || "Não foi possível excluir o creator.");
+            }
+
+            showToast("Creator removido da equipe com sucesso!", "success");
+            loadAdminCreators();
+        } catch (error) {
+            console.error(error);
+            showToast(error.message || "Erro ao tentar excluir o creator.", "error");
+        }
     }
 
     // =========================================

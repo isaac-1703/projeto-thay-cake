@@ -139,6 +139,111 @@
                 </div>
             </div>
         </div>
+
+        <!-- Spacer -->
+        <hr style="border: none; border-top: 2px dashed var(--purple-light); margin: 3rem 0;">
+
+        <!-- Creators Management Split Grid -->
+        <div class="admin-grid" style="margin-bottom: 3rem;">
+            <!-- Left Side: Creator Form Card -->
+            <div class="admin-card">
+                <h4 class="admin-card-title"><i class="fa-solid fa-user-plus" style="color: var(--purple-medium);"></i> Novo Creator</h4>
+
+                <form id="add-creator-form">
+                    <div class="form-group">
+                        <label for="creator-name">Nome do Criador</label>
+                        <input type="text" id="creator-name" class="form-input" placeholder="Ex: Thayane Alencar" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="creator-role">Cargo/Função</label>
+                        <input type="text" id="creator-role" class="form-input" placeholder="Ex: Chef Confeiteira" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="creator-bio">Breve Biografia</label>
+                        <textarea id="creator-bio" class="form-input" placeholder="Conte a história ou especialidade do criador..." style="min-height: 100px;" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Foto do Criador</label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="creator-photo" class="file-upload-input" accept="image/*" required>
+                            <div class="file-upload-label" id="creator-file-drag-label">
+                                <i class="fa-solid fa-cloud-arrow-up fa-2x"></i>
+                                <span id="creator-file-label-text">Selecione ou arraste a imagem</span>
+                                <span style="font-size: 0.75rem; opacity: 0.7;">PNG, JPG, WEBP até 5MB</span>
+                            </div>
+                        </div>
+                        <img id="creator-upload-preview-img" class="file-upload-preview" alt="Preview da imagem">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="creator-social-select">Selecionar Rede Social</label>
+                        <select id="creator-social-select" class="form-input">
+                            <option value="">-- Adicionar rede social --</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="github">GitHub</option>
+                            <option value="linkedin">LinkedIn</option>
+                        </select>
+                    </div>
+
+                    <div id="creator-instagram-group" class="form-group" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                            <label for="creator-instagram" style="margin-bottom: 0;">Instagram (Link ou usuário)</label>
+                            <button type="button" class="btn-remove-social" data-type="creator" data-social="instagram" style="background: none; border: none; color: #E03E3E; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                                <i class="fa-solid fa-xmark"></i> Remover
+                            </button>
+                        </div>
+                        <input type="text" id="creator-instagram" class="form-input" placeholder="Ex: https://instagram.com/usuario">
+                    </div>
+
+                    <div id="creator-github-group" class="form-group" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                            <label for="creator-github" style="margin-bottom: 0;">GitHub (Link ou usuário)</label>
+                            <button type="button" class="btn-remove-social" data-type="creator" data-social="github" style="background: none; border: none; color: #E03E3E; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                                <i class="fa-solid fa-xmark"></i> Remover
+                            </button>
+                        </div>
+                        <input type="text" id="creator-github" class="form-input" placeholder="Ex: https://github.com/usuario">
+                    </div>
+
+                    <div id="creator-linkedin-group" class="form-group" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                            <label for="creator-linkedin" style="margin-bottom: 0;">LinkedIn (Link ou usuário)</label>
+                            <button type="button" class="btn-remove-social" data-type="creator" data-social="linkedin" style="background: none; border: none; color: #E03E3E; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                                <i class="fa-solid fa-xmark"></i> Remover
+                            </button>
+                        </div>
+                        <input type="text" id="creator-linkedin" class="form-input" placeholder="Ex: https://linkedin.com/in/usuario">
+                    </div>
+
+                    <button type="submit" id="creator-submit-btn" class="btn-submit" style="margin-top: 1rem;">
+                        Adicionar Creator <i class="fa-solid fa-plus" style="margin-left: 0.5rem;"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right Side: Current Creators List -->
+            <div class="admin-card">
+                <h4 class="admin-card-title"><i class="fa-solid fa-users" style="color: var(--purple-medium);"></i> Equipe de Creators</h4>
+                <div class="products-table-wrapper">
+                    <table class="admin-products-table">
+                        <thead>
+                            <tr>
+                                <th>Imagem</th>
+                                <th>Nome</th>
+                                <th>Cargo</th>
+                                <th style="text-align: center;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-creators-tbody">
+                            <!-- Creators will be dynamically loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Edit Feedback Modal Overlay -->
@@ -182,6 +287,96 @@
                 </button>
                 <button type="button" id="edit-delete-btn" class="btn-submit" style="margin-top: 0.8rem; background: linear-gradient(135deg, #E03E3E, #B81D1D); box-shadow: 0 6px 15px rgba(224, 62, 62, 0.15); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                     Excluir Avaliação <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Creator Modal Overlay -->
+    <div class="login-overlay" id="edit-creator-overlay" style="display: none;">
+        <div class="login-card" style="max-width: 550px; overflow-y: auto; max-height: 90vh;">
+            <button class="back-to-store-btn" id="close-edit-creator-modal-btn" title="Fechar modal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="login-header">
+                <div class="login-logo">👥</div>
+                <h2 class="login-title">Editar Creator</h2>
+                <p class="login-subtitle">Altere as informações do criador</p>
+            </div>
+
+            <form id="edit-creator-form">
+                <input type="hidden" id="edit-creator-id">
+                
+                <div class="form-group">
+                    <label for="edit-creator-name">Nome do Criador</label>
+                    <input type="text" id="edit-creator-name" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-creator-role">Cargo/Função</label>
+                    <input type="text" id="edit-creator-role" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-creator-bio">Breve Biografia</label>
+                    <textarea id="edit-creator-bio" class="form-input" style="min-height: 100px;" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Foto do Criador (Opcional - deixe vazio para manter a atual)</label>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="edit-creator-photo" class="file-upload-input" accept="image/*">
+                        <div class="file-upload-label" id="edit-creator-file-drag-label">
+                            <i class="fa-solid fa-cloud-arrow-up fa-2x"></i>
+                            <span id="edit-creator-file-label-text">Selecione nova imagem para alterar</span>
+                            <span style="font-size: 0.75rem; opacity: 0.7;">PNG, JPG, WEBP até 5MB</span>
+                        </div>
+                    </div>
+                    <img id="edit-creator-upload-preview-img" class="file-upload-preview" alt="Preview da imagem">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-creator-social-select">Selecionar Rede Social</label>
+                    <select id="edit-creator-social-select" class="form-input">
+                        <option value="">-- Adicionar rede social --</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="github">GitHub</option>
+                        <option value="linkedin">LinkedIn</option>
+                    </select>
+                </div>
+
+                <div id="edit-creator-instagram-group" class="form-group" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                        <label for="edit-creator-instagram" style="margin-bottom: 0;">Instagram (Link ou usuário)</label>
+                        <button type="button" class="btn-remove-social" data-type="edit" data-social="instagram" style="background: none; border: none; color: #E03E3E; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="fa-solid fa-xmark"></i> Remover
+                        </button>
+                    </div>
+                    <input type="text" id="edit-creator-instagram" class="form-input" placeholder="Ex: https://instagram.com/usuario">
+                </div>
+
+                <div id="edit-creator-github-group" class="form-group" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                        <label for="edit-creator-github" style="margin-bottom: 0;">GitHub (Link ou usuário)</label>
+                        <button type="button" class="btn-remove-social" data-type="edit" data-social="github" style="background: none; border: none; color: #E03E3E; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="fa-solid fa-xmark"></i> Remover
+                        </button>
+                    </div>
+                    <input type="text" id="edit-creator-github" class="form-input" placeholder="Ex: https://github.com/usuario">
+                </div>
+
+                <div id="edit-creator-linkedin-group" class="form-group" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                        <label for="edit-creator-linkedin" style="margin-bottom: 0;">LinkedIn (Link ou usuário)</label>
+                        <button type="button" class="btn-remove-social" data-type="edit" data-social="linkedin" style="background: none; border: none; color: #E03E3E; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="fa-solid fa-xmark"></i> Remover
+                        </button>
+                    </div>
+                    <input type="text" id="edit-creator-linkedin" class="form-input" placeholder="Ex: https://linkedin.com/in/usuario">
+                </div>
+
+                <button type="submit" id="edit-creator-submit-btn" class="btn-submit" style="margin-top: 1rem;">
+                    Salvar Alterações <i class="fa-solid fa-floppy-disk" style="margin-left: 0.5rem;"></i>
                 </button>
             </form>
         </div>

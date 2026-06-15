@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <title>Creators | Quem Cria a Magia - Thay Cake</title>
+    <meta name="description"
+        content="Conheça os criadores por trás dos deliciosos bolos de pote artesanais da Thay Cake! Veja a biografia da equipe que faz a magia acontecer.">
+    <meta name="keywords" content="criadores, equipe, confeitaria, desenvolvedores, thay cake">
+    <meta name="author" content="Thay Cake">
+
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Tailwind CSS v4 -->
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/992/992717.png">
+    
+    <style>
+        /* Specific page styles for creators grid and animations */
+        .creators-section {
+            padding: 5rem 5%;
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: 70vh;
+        }
+        
+        .creators-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            justify-content: center;
+            margin-top: 3rem;
+        }
+
+        .creator-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1.5rem;
+            box-shadow: var(--shadow-premium);
+            transition: var(--transition-smooth);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .creator-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 45px rgba(42, 17, 56, 0.12), var(--shadow-glow);
+            border-color: rgba(75, 36, 99, 0.2);
+        }
+
+        .creator-photo-wrapper {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid var(--purple-light);
+            box-shadow: 0 8px 20px rgba(75, 36, 99, 0.1);
+            background: var(--beige-dark);
+            transition: var(--transition-smooth);
+        }
+
+        .creator-card:hover .creator-photo-wrapper {
+            transform: scale(1.05);
+            border-color: var(--purple-medium);
+        }
+
+        .creator-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .creator-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .creator-name {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            color: var(--purple-dark);
+        }
+
+        .creator-role {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--brown-medium);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .creator-bio {
+            color: var(--text-dark);
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-top: 0.5rem;
+        }
+
+        .creator-socials {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .creator-social-link {
+            font-size: 1.4rem;
+            color: var(--purple-medium);
+            background: var(--purple-light);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-smooth);
+            text-decoration: none;
+            border: 1px solid rgba(75, 36, 99, 0.1);
+        }
+
+        .creator-social-link:hover {
+            background: var(--purple-medium);
+            color: var(--white);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(75, 36, 99, 0.2);
+        }
+        
+        .brand-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header & Navigation -->
+    <header>
+        <a href="/" class="brand-link" title="Voltar para a Loja">
+            <span class="logo-icon" aria-hidden="true">🧁</span>
+            <h1 class="brand-title">Thay Cake</h1>
+        </a>
+        <a href="/" class="admin-link-btn">
+            <i class="fa-solid fa-store"></i> Voltar para a Loja
+        </a>
+    </header>
+
+    <!-- Creators Presentation Section -->
+    <section class="creators-section">
+        <div class="section-header">
+            <h3>Quem Cria a Magia</h3>
+            <p>Conheça as mentes doces e criativas por trás da Thay Cake!</p>
+        </div>
+
+        <div class="creators-grid" id="creators-list-container">
+            <!-- Loading state -->
+            <div class="no-feedbacks" style="grid-column: 1 / -1; max-width: 600px; margin: 0 auto; width: 100%;">
+                <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--purple-medium); margin-bottom: 1rem;"></i>
+                <p>Carregando as biografias dos criadores...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <h4>🍰 Thay Cake</h4>
+            <p>O bolo de pote perfeito para alegrar o seu dia.</p>
+            <p><i class="fa-solid fa-phone"></i> WhatsApp: (89) 98819-4690</p>
+        </div>
+        <hr class="footer-divider">
+        <div class="footer-bottom">
+            &copy; 2026 Thay Cake. Todos os direitos reservados.
+        </div>
+    </footer>
+
+    <!-- Application Script for Creators Page -->
+    <script src="creators.js"></script>
+</body>
+
+</html>

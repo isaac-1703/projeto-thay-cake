@@ -19,6 +19,7 @@ STATIC_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOADS_DIR = os.path.join(STATIC_DIR, "uploads")
 PRODUCTS_FILE = os.path.join(STATIC_DIR, "products.json")
 FEEDBACKS_FILE = os.path.join(STATIC_DIR, "feedbacks.json")
+CREATORS_FILE = os.path.join(STATIC_DIR, "creators.json")
 
 # Ensure required directories exist
 os.makedirs(UPLOADS_DIR, exist_ok=True)
@@ -29,6 +30,10 @@ if not os.path.exists(PRODUCTS_FILE):
 
 if not os.path.exists(FEEDBACKS_FILE):
     with open(FEEDBACKS_FILE, "w", encoding="utf-8") as f:
+        json.dump([], f, ensure_ascii=False, indent=2)
+
+if not os.path.exists(CREATORS_FILE):
+    with open(CREATORS_FILE, "w", encoding="utf-8") as f:
         json.dump([], f, ensure_ascii=False, indent=2)
 
 # JWT helper functions
@@ -104,6 +109,9 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
         elif path == "/z_admin" or path == "/z_admin/":
             self.serve_static_file("admin.html")
             return
+        elif path == "/creators":
+            self.serve_static_file("creators.html")
+            return
         
         # API Endpoints
         elif path == "/api/products":
@@ -111,6 +119,9 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
             return
         elif path == "/api/feedbacks":
             self.handle_get_feedbacks()
+            return
+        elif path == "/api/creators":
+            self.handle_get_creators()
             return
 
         # Serve static assets
@@ -139,6 +150,8 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
             self.handle_create_product()
         elif path == "/api/feedbacks":
             self.handle_create_feedback()
+        elif path == "/api/creators":
+            self.handle_create_creator()
         else:
             self.send_error_response(404, "Rota de API não encontrada")
 
@@ -150,6 +163,8 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
             self.handle_delete_product()
         elif path == "/api/feedbacks":
             self.handle_delete_feedback()
+        elif path == "/api/creators":
+            self.handle_delete_creator()
         else:
             self.send_error_response(404, "Rota de API não encontrada")
 
@@ -159,6 +174,8 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
 
         if path == "/api/feedbacks":
             self.handle_update_feedback()
+        elif path == "/api/creators":
+            self.handle_update_creator()
         else:
             self.send_error_response(404, "Rota de API não encontrada")
 
@@ -507,6 +524,222 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
             self.send_json_response(200, {"success": True, "message": "Avaliação excluída com sucesso"})
         except Exception as e:
             self.send_error_response(500, f"Erro ao excluir avaliação: {str(e)}")
+
+    def handle_get_creators(self):
+        try:
+            with open(CREATORS_FILE, "r", encoding="utf-8") as f:
+                creators = json.load(f)
+            self.send_json_response(200, creators)
+        except Exception as e:
+            self.send_error_response(500, f"Erro ao ler criadores: {str(e)}")
+
+    def handle_create_creator(self):
+        admin_data = self.get_jwt_payload_from_request()
+        if not admin_data:
+            self.send_error_response(401, "Acesso negado. Token JWT ausente ou inválido.")
+            return
+
+        payload = self.read_json_payload()
+        if not payload:
+            self.send_error_response(400, "Corpo de requisição inválido")
+            return
+
+        name = payload.get("name")
+        role = payload.get("role")
+        bio = payload.get("bio")
+        photo_base64 = payload.get("photo")
+        instagram = payload.get("instagram", "")
+        github = payload.get("github", "")
+        linkedin = payload.get("linkedin", "")
+
+        if not name or not role or not bio or not photo_base64:
+            self.send_error_response(400, "Campos nome, cargo, biografia e foto são obrigatórios")
+            return
+
+        try:
+            if "," in photo_base64:
+                header, base64_str = photo_base64.split(",", 1)
+                ext = ".png"
+                if "image/jpeg" in header or "image/jpg" in header:
+                    ext = ".jpg"
+                elif "image/webp" in header:
+                    ext = ".webp"
+                elif "image/gif" in header:
+                    ext = ".gif"
+            else:
+                base64_str = photo_base64
+                ext = ".png"
+
+            photo_bytes = base64.b64decode(base64_str)
+            image_filename = f"creator_{uuid.uuid4().hex}{ext}"
+            image_filepath = os.path.join(UPLOADS_DIR, image_filename)
+
+            with open(image_filepath, "wb") as img_file:
+                img_file.write(photo_bytes)
+
+            with open(CREATORS_FILE, "r+", encoding="utf-8") as f:
+                creators = json.load(f)
+                
+                new_creator = {
+                    "id": uuid.uuid4().hex,
+                    "name": name,
+                    "role": role,
+                    "bio": bio,
+                    "photo": f"/uploads/{image_filename}",
+                    "instagram": instagram,
+                    "github": github,
+                    "linkedin": linkedin,
+                    "created_at": time.time()
+                }
+                
+                creators.append(new_creator)
+                f.seek(0)
+                json.dump(creators, f, ensure_ascii=False, indent=2)
+                f.truncate()
+
+            self.send_json_response(201, {"success": True, "creator": new_creator})
+        except Exception as e:
+            self.send_error_response(500, f"Erro ao criar criador: {str(e)}")
+
+    def handle_update_creator(self):
+        admin_data = self.get_jwt_payload_from_request()
+        if not admin_data:
+            self.send_error_response(401, "Acesso negado. Token JWT ausente ou inválido.")
+            return
+
+        payload = self.read_json_payload()
+        if not payload:
+            self.send_error_response(400, "Corpo de requisição inválido")
+            return
+
+        creator_id = payload.get("id")
+        name = payload.get("name")
+        role = payload.get("role")
+        bio = payload.get("bio")
+        photo_base64 = payload.get("photo")
+        instagram = payload.get("instagram", "")
+        github = payload.get("github", "")
+        linkedin = payload.get("linkedin", "")
+
+        if not creator_id or not name or not role or not bio:
+            self.send_error_response(400, "Campos ID, nome, cargo e biografia são obrigatórios")
+            return
+
+        try:
+            with open(CREATORS_FILE, "r+", encoding="utf-8") as f:
+                creators = json.load(f)
+                updated = False
+                
+                for cr in creators:
+                    if cr["id"] == creator_id:
+                        cr["name"] = name.strip()
+                        cr["role"] = role.strip()
+                        cr["bio"] = bio.strip()
+                        cr["instagram"] = instagram.strip()
+                        cr["github"] = github.strip()
+                        cr["linkedin"] = linkedin.strip()
+
+                        # Check if photo was updated
+                        if photo_base64 and photo_base64.startswith("data:image/"):
+                            old_photo = cr.get("photo", "")
+                            if old_photo.startswith("/uploads/"):
+                                old_path = os.path.join(STATIC_DIR, old_photo.lstrip("/"))
+                                if os.path.exists(old_path) and os.path.isfile(old_path):
+                                    try:
+                                        os.remove(old_path)
+                                    except Exception:
+                                        pass
+
+                            if "," in photo_base64:
+                                header, base64_str = photo_base64.split(",", 1)
+                                ext = ".png"
+                                if "image/jpeg" in header or "image/jpg" in header:
+                                    ext = ".jpg"
+                                elif "image/webp" in header:
+                                    ext = ".webp"
+                                elif "image/gif" in header:
+                                    ext = ".gif"
+                            else:
+                                base64_str = photo_base64
+                                ext = ".png"
+
+                            photo_bytes = base64.b64decode(base64_str)
+                            image_filename = f"creator_{uuid.uuid4().hex}{ext}"
+                            image_filepath = os.path.join(UPLOADS_DIR, image_filename)
+
+                            with open(image_filepath, "wb") as img_file:
+                                img_file.write(photo_bytes)
+
+                            cr["photo"] = f"/uploads/{image_filename}"
+                        elif photo_base64:
+                            cr["photo"] = photo_base64
+
+                        updated = True
+                        break
+                        
+                if not updated:
+                    self.send_error_response(404, "Criador não encontrado")
+                    return
+                    
+                f.seek(0)
+                json.dump(creators, f, ensure_ascii=False, indent=2)
+                f.truncate()
+
+            self.send_json_response(200, {"success": True, "message": "Criador atualizado com sucesso"})
+        except Exception as e:
+            self.send_error_response(500, f"Erro ao atualizar criador: {str(e)}")
+
+    def handle_delete_creator(self):
+        admin_data = self.get_jwt_payload_from_request()
+        if not admin_data:
+            self.send_error_response(401, "Acesso negado. Token JWT ausente ou inválido.")
+            return
+
+        payload = self.read_json_payload()
+        creator_id = payload.get("id") if payload else None
+        
+        if not creator_id:
+            parsed_url = urlparse(self.path)
+            query_params = parse_qs(parsed_url.query)
+            if 'id' in query_params:
+                creator_id = query_params['id'][0]
+
+        if not creator_id:
+            self.send_error_response(400, "ID do criador é obrigatório")
+            return
+
+        try:
+            with open(CREATORS_FILE, "r+", encoding="utf-8") as f:
+                creators = json.load(f)
+                filtered_creators = []
+                deleted_creator = None
+
+                for cr in creators:
+                    if cr["id"] == creator_id:
+                        deleted_creator = cr
+                    else:
+                        filtered_creators.append(cr)
+
+                if not deleted_creator:
+                    self.send_error_response(404, "Criador não encontrado")
+                    return
+
+                # Delete old photo file
+                photo_rel_path = deleted_creator["photo"].lstrip("/")
+                photo_abs_path = os.path.join(STATIC_DIR, photo_rel_path)
+                if photo_rel_path.startswith("uploads/") and os.path.exists(photo_abs_path) and os.path.isfile(photo_abs_path):
+                    try:
+                        os.remove(photo_abs_path)
+                    except Exception:
+                        pass
+
+                f.seek(0)
+                json.dump(filtered_creators, f, ensure_ascii=False, indent=2)
+                f.truncate()
+
+            self.send_json_response(200, {"success": True, "message": "Criador excluído com sucesso"})
+        except Exception as e:
+            self.send_error_response(500, f"Erro ao excluir criador: {str(e)}")
 
 def run():
     print(f"Iniciando o servidor Thay Cake na porta {PORT}...")

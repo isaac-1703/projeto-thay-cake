@@ -1,0 +1,22 @@
+[
+  {
+    "id": "1",
+    "name": "Thayane Alencar",
+    "role": "Chef Confeiteira",
+    "bio": "Apaixonada por açúcar e afeto, Thayane fundou a Thay Cake com a missão de espalhar doçura. Especialista em bolos de pote artesanais, ela cuida de cada receita como uma obra de arte.",
+    "photo": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400&h=400&fit=crop",
+    "instagram": "https://instagram.com/thaycake",
+    "github": "",
+    "linkedin": ""
+  },
+  {
+    "id": "2",
+    "name": "Isaac Dev",
+    "role": "Desenvolvedor Parceiro",
+    "bio": "Desenvolvedor entusiasta de tecnologia e amante de doces. Isaac transformou a paixão pela Thay Cake em código, criando uma plataforma moderna e premium para facilitar os pedidos e avaliações.",
+    "photo": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=400&fit=crop",
+    "instagram": "https://instagram.com/isaacdev",
+    "github": "https://github.com/isaac",
+    "linkedin": "https://linkedin.com/in/isaac"
+  }
+]
