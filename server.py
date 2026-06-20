@@ -5,6 +5,8 @@ import hmac
 import hashlib
 import time
 import uuid
+import urllib.request
+import urllib.error
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -20,6 +22,11 @@ UPLOADS_DIR = os.path.join(STATIC_DIR, "uploads")
 PRODUCTS_FILE = os.path.join(STATIC_DIR, "products.json")
 FEEDBACKS_FILE = os.path.join(STATIC_DIR, "feedbacks.json")
 CREATORS_FILE = os.path.join(STATIC_DIR, "creators.json")
+
+# Supabase configuration (loaded from environment variables)
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip().rstrip('/')
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
+USE_SUPABASE = bool(SUPABASE_URL and SUPABASE_KEY)
 
 # Ensure required directories exist
 os.makedirs(UPLOADS_DIR, exist_ok=True)
@@ -79,6 +86,110 @@ def verify_jwt(token: str) -> dict or None:
     except Exception:
         return None
 
+# Supabase API request helper functions
+def supabase_api_request(endpoint, method="GET", payload=None):
+    """
+    Realiza requisições HTTP para a API REST do Supabase.
+    """
+    url = f"{SUPABASE_URL}{endpoint}"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+    }
+    
+    data = None
+    if payload is not None:
+        if isinstance(payload, bytes):
+            data = payload
+        else:
+            data = json.dumps(payload).encode('utf-8')
+
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req) as response:
+            res_body = response.read()
+            if res_body:
+                return json.loads(res_body.decode('utf-8'))
+            return []
+    except urllib.error.HTTPError as e:
+        err_content = e.read().decode('utf-8')
+        try:
+            err_json = json.loads(err_content)
+            err_msg = err_json.get("message", err_content)
+        except Exception:
+            err_msg = err_content
+        raise Exception(f"Supabase API Error [{e.code}]: {err_msg}")
+    except Exception as e:
+        raise Exception(f"Supabase Connection Error: {str(e)}")
+
+def supabase_upload_image(base64_photo):
+    """
+    Faz o upload de uma imagem em Base64 para o Bucket 'uploads' do Supabase Storage.
+    Retorna a URL pública final da imagem.
+    """
+    if "," in base64_photo:
+        header, base64_str = base64_photo.split(",", 1)
+        mime = "image/png"
+        ext = ".png"
+        if "image/jpeg" in header or "image/jpg" in header:
+            mime = "image/jpeg"
+            ext = ".jpg"
+        elif "image/webp" in header:
+            mime = "image/webp"
+            ext = ".webp"
+        elif "image/gif" in header:
+            mime = "image/gif"
+            ext = ".gif"
+    else:
+        base64_str = base64_photo
+        mime = "image/png"
+        ext = ".png"
+
+    photo_bytes = base64.b64decode(base64_str)
+    filename = f"uploads_{uuid.uuid4().hex}{ext}"
+    
+    url = f"{SUPABASE_URL}/storage/v1/object/uploads/{filename}"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": mime
+    }
+    
+    req = urllib.request.Request(url, data=photo_bytes, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req) as response:
+            response.read()
+    except urllib.error.HTTPError as e:
+        err_msg = e.read().decode('utf-8')
+        raise Exception(f"Erro no Supabase Storage [{e.code}]: {err_msg}")
+    except Exception as e:
+        raise Exception(f"Erro de conexão com Supabase Storage: {str(e)}")
+        
+    return f"{SUPABASE_URL}/storage/v1/object/public/uploads/{filename}"
+
+def supabase_delete_image(public_url):
+    """
+    Remove uma imagem do Bucket 'uploads' do Supabase Storage com base na sua URL pública.
+    """
+    if not public_url or "/storage/v1/object/public/uploads/" not in public_url:
+        return
+        
+    filename = public_url.split("/storage/v1/object/public/uploads/")[-1]
+    url = f"{SUPABASE_URL}/storage/v1/object/uploads/{filename}"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}"
+    }
+    
+    req = urllib.request.Request(url, headers=headers, method="DELETE")
+    try:
+        with urllib.request.urlopen(req) as response:
+            response.read()
+    except Exception as e:
+        print(f"Warning: Falha ao deletar imagem {filename} do Supabase: {str(e)}")
+
 class CakeStoreRequestHandler(BaseHTTPRequestHandler):
     def end_headers(self):
         # Allow cross-origin requests for safety, although everything is hosted together
@@ -102,18 +213,11 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
         parsed_path = urlparse(self.path)
         path = parsed_path.path
 
-        # Trailing slash redirection for clean route aliases
-        if path in ("/admin/", "/z_admin/", "/creators/"):
-            self.send_response(302)
-            self.send_header("Location", path.rstrip('/'))
-            self.end_headers()
-            return
-
         # Route aliases
         if path == "/" or path == "/index.html":
             self.serve_static_file("index.html")
             return
-        elif path in ("/admin", "/z_admin"):
+        elif path == "/z_admin" or path == "/z_admin/":
             self.serve_static_file("admin.html")
             return
         elif path == "/creators":
@@ -266,6 +370,15 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
             self.send_error_response(401, "Usuário ou senha incorretos")
 
     def handle_get_products(self):
+        if USE_SUPABASE:
+            try:
+                products = supabase_api_request("/rest/v1/products?select=*")
+                self.send_json_response(200, products)
+                return
+            except Exception as e:
+                self.send_error_response(500, f"Erro ao ler produtos do Supabase: {str(e)}")
+                return
+
         try:
             with open(PRODUCTS_FILE, "r", encoding="utf-8") as f:
                 products = json.load(f)
@@ -288,11 +401,31 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
 
         name = payload.get("name")
         price = payload.get("price")
-        photo_base64 = payload.get("photo") # expectation: data:image/png;base64,iVBORw...
+        photo_base64 = payload.get("photo")
 
         if not name or not price or not photo_base64:
             self.send_error_response(400, "Campos nome, preço e foto são obrigatórios")
             return
+
+        if USE_SUPABASE:
+            try:
+                # Upload image to Supabase Storage
+                photo_url = supabase_upload_image(photo_base64)
+                
+                new_product = {
+                    "id": uuid.uuid4().hex,
+                    "name": name,
+                    "price": float(price),
+                    "photo": photo_url,
+                    "created_at": time.time()
+                }
+                
+                supabase_api_request("/rest/v1/products", method="POST", payload=new_product)
+                self.send_json_response(201, {"success": True, "product": new_product})
+                return
+            except Exception as e:
+                self.send_error_response(500, f"Erro ao salvar produto no Supabase: {str(e)}")
+                return
 
         try:
             # 3. Decode base64 image and save to file
@@ -359,6 +492,26 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
             self.send_error_response(400, "ID do produto é obrigatório")
             return
 
+        if USE_SUPABASE:
+            try:
+                # Find product first to get photo URL
+                products = supabase_api_request(f"/rest/v1/products?id=eq.{product_id}&select=*")
+                if not products:
+                    self.send_error_response(404, "Produto não encontrado")
+                    return
+                product = products[0]
+                
+                # Delete image from storage
+                supabase_delete_image(product.get("photo"))
+                
+                # Delete from table
+                supabase_api_request(f"/rest/v1/products?id=eq.{product_id}", method="DELETE")
+                self.send_json_response(200, {"success": True, "message": "Produto excluído com sucesso"})
+                return
+            except Exception as e:
+                self.send_error_response(500, f"Erro ao excluir produto no Supabase: {str(e)}")
+                return
+
         try:
             with open(PRODUCTS_FILE, "r+", encoding="utf-8") as f:
                 products = json.load(f)
@@ -393,6 +546,17 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
             self.send_error_response(500, f"Erro ao excluir produto: {str(e)}")
 
     def handle_get_feedbacks(self):
+        if USE_SUPABASE:
+            try:
+                feedbacks = supabase_api_request("/rest/v1/feedbacks?select=*")
+                # Return feedback in reverse chronological order
+                feedbacks.sort(key=lambda x: x.get("created_at", 0), reverse=True)
+                self.send_json_response(200, feedbacks)
+                return
+            except Exception as e:
+                self.send_error_response(500, f"Erro ao ler feedbacks do Supabase: {str(e)}")
+                return
+
         try:
             with open(FEEDBACKS_FILE, "r", encoding="utf-8") as f:
                 feedbacks = json.load(f)
@@ -416,18 +580,26 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
             self.send_error_response(400, "A avaliação por estrelas (1 a 5) é obrigatória")
             return
 
+        new_feedback = {
+            "id": uuid.uuid4().hex,
+            "name": name if name else "Anônimo",
+            "rating": int(rating),
+            "comment": comment,
+            "created_at": time.time()
+        }
+
+        if USE_SUPABASE:
+            try:
+                supabase_api_request("/rest/v1/feedbacks", method="POST", payload=new_feedback)
+                self.send_json_response(201, {"success": True, "feedback": new_feedback})
+                return
+            except Exception as e:
+                self.send_error_response(500, f"Erro ao salvar feedback no Supabase: {str(e)}")
+                return
+
         try:
             with open(FEEDBACKS_FILE, "r+", encoding="utf-8") as f:
                 feedbacks = json.load(f)
-                
-                new_feedback = {
-                    "id": uuid.uuid4().hex,
-                    "name": name if name else "Anônimo",
-                    "rating": int(rating),
-                    "comment": comment,
-                    "created_at": time.time()
-                }
-                
                 feedbacks.append(new_feedback)
                 f.seek(0)
                 json.dump(feedbacks, f, ensure_ascii=False, indent=2)
@@ -458,6 +630,25 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
         if not feedback_id or rating is None or not (1 <= int(rating) <= 5):
             self.send_error_response(400, "Campos ID e avaliação (1 a 5) são obrigatórios")
             return
+
+        update_data = {}
+        if name is not None:
+            update_data["name"] = name.strip() if name.strip() else "Anônimo"
+        update_data["rating"] = int(rating)
+        if comment is not None:
+            update_data["comment"] = comment.strip()
+
+        if USE_SUPABASE:
+            try:
+                res = supabase_api_request(f"/rest/v1/feedbacks?id=eq.{feedback_id}", method="PATCH", payload=update_data)
+                if not res:
+                    self.send_error_response(404, "Feedback não encontrado")
+                    return
+                self.send_json_response(200, {"success": True, "message": "Feedback atualizado com sucesso"})
+                return
+            except Exception as e:
+                self.send_error_response(500, f"Erro ao atualizar feedback no Supabase: {str(e)}")
+                return
 
         try:
             with open(FEEDBACKS_FILE, "r+", encoding="utf-8") as f:
@@ -508,6 +699,18 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
             self.send_error_response(400, "ID da avaliação é obrigatório")
             return
 
+        if USE_SUPABASE:
+            try:
+                res = supabase_api_request(f"/rest/v1/feedbacks?id=eq.{feedback_id}", method="DELETE")
+                if not res:
+                    self.send_error_response(404, "Avaliação não encontrada")
+                    return
+                self.send_json_response(200, {"success": True, "message": "Avaliação excluída com sucesso"})
+                return
+            except Exception as e:
+                self.send_error_response(500, f"Erro ao excluir avaliação no Supabase: {str(e)}")
+                return
+
         try:
             with open(FEEDBACKS_FILE, "r+", encoding="utf-8") as f:
                 feedbacks = json.load(f)
@@ -533,6 +736,17 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
             self.send_error_response(500, f"Erro ao excluir avaliação: {str(e)}")
 
     def handle_get_creators(self):
+        if USE_SUPABASE:
+            try:
+                creators = supabase_api_request("/rest/v1/creators?select=*")
+                # Return creators sorted by created_at or default
+                creators.sort(key=lambda x: x.get("created_at", 0))
+                self.send_json_response(200, creators)
+                return
+            except Exception as e:
+                self.send_error_response(500, f"Erro ao ler criadores do Supabase: {str(e)}")
+                return
+
         try:
             with open(CREATORS_FILE, "r", encoding="utf-8") as f:
                 creators = json.load(f)
@@ -562,6 +776,30 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
         if not name or not role or not bio or not photo_base64:
             self.send_error_response(400, "Campos nome, cargo, biografia e foto são obrigatórios")
             return
+
+        if USE_SUPABASE:
+            try:
+                # Upload image to Supabase Storage
+                photo_url = supabase_upload_image(photo_base64)
+                
+                new_creator = {
+                    "id": uuid.uuid4().hex,
+                    "name": name,
+                    "role": role,
+                    "bio": bio,
+                    "photo": photo_url,
+                    "instagram": instagram,
+                    "github": github,
+                    "linkedin": linkedin,
+                    "created_at": time.time()
+                }
+                
+                supabase_api_request("/rest/v1/creators", method="POST", payload=new_creator)
+                self.send_json_response(201, {"success": True, "creator": new_creator})
+                return
+            except Exception as e:
+                self.send_error_response(500, f"Erro ao criar criador no Supabase: {str(e)}")
+                return
 
         try:
             if "," in photo_base64:
@@ -631,6 +869,41 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
         if not creator_id or not name or not role or not bio:
             self.send_error_response(400, "Campos ID, nome, cargo e biografia são obrigatórios")
             return
+
+        if USE_SUPABASE:
+            try:
+                # Find creator first
+                creators = supabase_api_request(f"/rest/v1/creators?id=eq.{creator_id}&select=*")
+                if not creators:
+                    self.send_error_response(404, "Criador não encontrado")
+                    return
+                creator = creators[0]
+
+                photo_url = creator.get("photo")
+                if photo_base64 and photo_base64.startswith("data:image/"):
+                    # Upload new photo
+                    photo_url = supabase_upload_image(photo_base64)
+                    # Delete old photo
+                    supabase_delete_image(creator.get("photo"))
+                elif photo_base64:
+                    photo_url = photo_base64
+
+                update_data = {
+                    "name": name.strip(),
+                    "role": role.strip(),
+                    "bio": bio.strip(),
+                    "photo": photo_url,
+                    "instagram": instagram.strip(),
+                    "github": github.strip(),
+                    "linkedin": linkedin.strip()
+                }
+
+                supabase_api_request(f"/rest/v1/creators?id=eq.{creator_id}", method="PATCH", payload=update_data)
+                self.send_json_response(200, {"success": True, "message": "Criador atualizado com sucesso"})
+                return
+            except Exception as e:
+                self.send_error_response(500, f"Erro ao atualizar criador no Supabase: {str(e)}")
+                return
 
         try:
             with open(CREATORS_FILE, "r+", encoding="utf-8") as f:
@@ -714,6 +987,26 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
         if not creator_id:
             self.send_error_response(400, "ID do criador é obrigatório")
             return
+
+        if USE_SUPABASE:
+            try:
+                # Find creator to get photo url
+                creators = supabase_api_request(f"/rest/v1/creators?id=eq.{creator_id}&select=*")
+                if not creators:
+                    self.send_error_response(404, "Criador não encontrado")
+                    return
+                creator = creators[0]
+                
+                # Delete image from storage
+                supabase_delete_image(creator.get("photo"))
+                
+                # Delete from table
+                supabase_api_request(f"/rest/v1/creators?id=eq.{creator_id}", method="DELETE")
+                self.send_json_response(200, {"success": True, "message": "Criador excluído com sucesso"})
+                return
+            except Exception as e:
+                self.send_error_response(500, f"Erro ao excluir criador no Supabase: {str(e)}")
+                return
 
         try:
             with open(CREATORS_FILE, "r+", encoding="utf-8") as f:
