@@ -102,11 +102,18 @@ class CakeStoreRequestHandler(BaseHTTPRequestHandler):
         parsed_path = urlparse(self.path)
         path = parsed_path.path
 
+        # Trailing slash redirection for clean route aliases
+        if path in ("/admin/", "/z_admin/", "/creators/"):
+            self.send_response(302)
+            self.send_header("Location", path.rstrip('/'))
+            self.end_headers()
+            return
+
         # Route aliases
         if path == "/" or path == "/index.html":
             self.serve_static_file("index.html")
             return
-        elif path == "/z_admin" or path == "/z_admin/":
+        elif path in ("/admin", "/z_admin"):
             self.serve_static_file("admin.html")
             return
         elif path == "/creators":
