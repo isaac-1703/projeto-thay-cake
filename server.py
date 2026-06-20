@@ -17,11 +17,12 @@ PORT = 8585
 SECRET_KEY = b"thay_cake_super_secret_key_2026_988194690"
 
 # Directories configuration
-STATIC_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 UPLOADS_DIR = os.path.join(STATIC_DIR, "uploads")
-PRODUCTS_FILE = os.path.join(STATIC_DIR, "products.json")
-FEEDBACKS_FILE = os.path.join(STATIC_DIR, "feedbacks.json")
-CREATORS_FILE = os.path.join(STATIC_DIR, "creators.json")
+PRODUCTS_FILE = os.path.join(DATA_DIR, "products.json")
+FEEDBACKS_FILE = os.path.join(DATA_DIR, "feedbacks.json")
+CREATORS_FILE = os.path.join(DATA_DIR, "creators.json")
 
 # Supabase configuration (loaded from environment variables)
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip().rstrip('/')
@@ -30,6 +31,7 @@ USE_SUPABASE = bool(SUPABASE_URL and SUPABASE_KEY)
 
 # Ensure required directories exist
 os.makedirs(UPLOADS_DIR, exist_ok=True)
+os.makedirs(DATA_DIR, exist_ok=True)
 
 if not os.path.exists(PRODUCTS_FILE):
     with open(PRODUCTS_FILE, "w", encoding="utf-8") as f:
