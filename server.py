@@ -24,10 +24,21 @@ PRODUCTS_FILE = os.path.join(DATA_DIR, "products.json")
 FEEDBACKS_FILE = os.path.join(DATA_DIR, "feedbacks.json")
 CREATORS_FILE = os.path.join(DATA_DIR, "creators.json")
 
+# Try to load environment variables from .env file if it exists
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+if os.path.exists(env_path):
+    with open(env_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ[k.strip()] = v.strip().strip('"').strip("'")
+
 # Supabase configuration (loaded from environment variables)
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip().rstrip('/')
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
 USE_SUPABASE = bool(SUPABASE_URL and SUPABASE_KEY)
+
 
 # Ensure required directories exist
 os.makedirs(UPLOADS_DIR, exist_ok=True)
